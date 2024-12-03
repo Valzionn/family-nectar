@@ -8,6 +8,7 @@ import Login from "./pages/Login";
 import DinnerPoll from "./pages/DinnerPoll";
 import ShoppingList from "./pages/ShoppingList";
 import Chores from "./pages/Chores";
+import CalendarPage from "./pages/Calendar";
 
 const queryClient = new QueryClient();
 
@@ -23,6 +24,7 @@ const App = () => (
           <Route path="/dinner-poll" element={<DinnerPoll />} />
           <Route path="/shopping-list" element={<ShoppingList />} />
           <Route path="/chores" element={<Chores />} />
+          <Route path="/calendar" element={<CalendarPage />} />
         </Routes>
       </BrowserRouter>
     </TooltipProvider>
