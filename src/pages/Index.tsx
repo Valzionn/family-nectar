@@ -1,6 +1,6 @@
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { PlusCircle, ListTodo, Vote, ShoppingCart, Calendar } from "lucide-react";
+import { PlusCircle, ListTodo, Vote, ShoppingCart, Calendar, PiggyBank } from "lucide-react";
 import { Link } from "react-router-dom";
 
 const Index = () => {
@@ -53,6 +53,17 @@ const Index = () => {
             <Link to="/calendar">
               <Button className="w-full bg-primary hover:bg-primary/90">
                 <PlusCircle className="mr-2 h-4 w-4" /> View Calendar
+              </Button>
+            </Link>
+          </Card>
+
+          <Card className="p-6 hover:shadow-lg transition-shadow">
+            <PiggyBank className="w-12 h-12 text-primary mb-4" />
+            <h2 className="text-xl font-semibold mb-2">Travel Fund</h2>
+            <p className="text-gray-600 mb-4">Track family savings for our next holiday</p>
+            <Link to="/travel-fund">
+              <Button className="w-full bg-primary hover:bg-primary/90">
+                <PlusCircle className="mr-2 h-4 w-4" /> View Fund
               </Button>
             </Link>
           </Card>
