@@ -1,47 +1,49 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Checkbox } from "@/components/ui/checkbox";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { X, ArrowLeft } from "lucide-react";
 import { Link } from "react-router-dom";
-
-interface ShoppingItem {
-  id: string;
-  text: string;
-  completed: boolean;
-}
+import { getShoppingItems, createShoppingItem, updateShoppingItem, deleteShoppingItem } from '../services/api';
 
 const ShoppingList = () => {
-  const [items, setItems] = useState<ShoppingItem[]>([]);
+  const [items, setItems] = useState([]);
   const [newItem, setNewItem] = useState("");
 
-  const addItem = (e: React.FormEvent) => {
+  useEffect(() => {
+    const fetchItems = async () => {
+      const response = await getShoppingItems();
+      setItems(response.data);
+    };
+    fetchItems();
+  }, []);
+
+  const addItem = async (e) => {
     e.preventDefault();
     if (newItem.trim()) {
-      setItems([
-        ...items,
-        { id: crypto.randomUUID(), text: newItem.trim(), completed: false },
-      ]);
+      const newItemData = { name: newItem.trim(), isPurchased: false };
+      const response = await createShoppingItem(newItemData);
+      setItems([...items, response.data]);
       setNewItem("");
     }
   };
 
-  const toggleItem = (id: string) => {
-    setItems(
-      items.map((item) =>
-        item.id === id ? { ...item, completed: !item.completed } : item
-      )
-    );
+  const toggleItem = async (id) => {
+    const item = items.find((item) => item.id === id);
+    const updatedItem = { ...item, isPurchased: !item.isPurchased };
+    await updateShoppingItem(id, updatedItem);
+    setItems(items.map((item) => (item.id === id ? updatedItem : item)));
   };
 
-  const removeItem = (id: string) => {
+  const removeItem = async (id) => {
+    await deleteShoppingItem(id);
     setItems(items.filter((item) => item.id !== id));
   };
 
   return (
     <div className="container px-4 py-8 max-w-2xl mx-auto">
-      <Link to="/">
+      <Link to="/index">
         <Button variant="ghost" className="mb-4">
           <ArrowLeft className="mr-2 h-4 w-4" /> Back to Home
         </Button>
@@ -74,15 +76,15 @@ const ShoppingList = () => {
               >
                 <div className="flex items-center gap-2">
                   <Checkbox
-                    checked={item.completed}
+                    checked={item.isPurchased}
                     onCheckedChange={() => toggleItem(item.id)}
                   />
                   <span
                     className={`${
-                      item.completed ? "line-through text-muted-foreground" : ""
+                      item.isPurchased ? "line-through text-muted-foreground" : ""
                     }`}
                   >
-                    {item.text}
+                    {item.name}
                   </span>
                 </div>
                 <Button

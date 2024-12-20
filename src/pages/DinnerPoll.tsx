@@ -1,63 +1,82 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { ArrowLeft, Plus, X } from "lucide-react";
 import { Link } from "react-router-dom";
 import { toast } from "sonner";
-
-interface DinnerOption {
-  id: string;
-  text: string;
-  votes: number;
-}
+import { getDinnerPolls, createDinnerPoll, voteDinnerPoll, deleteDinnerPoll } from '../services/api';
 
 const DinnerPoll = () => {
-  const [options, setOptions] = useState<DinnerOption[]>([]);
+  const [options, setOptions] = useState([]);
   const [newOption, setNewOption] = useState("");
-  const [selectedOption, setSelectedOption] = useState<string | undefined>();
+  const [selectedOption, setSelectedOption] = useState("");
 
-  const addOption = (e: React.FormEvent) => {
+  useEffect(() => {
+    const fetchOptions = async () => {
+      const response = await getDinnerPolls();
+      setOptions(response.data);
+    };
+    fetchOptions();
+  }, []);
+
+  const addOption = async (e) => {
     e.preventDefault();
     if (newOption.trim()) {
-      setOptions([
-        ...options,
-        { id: crypto.randomUUID(), text: newOption.trim(), votes: 0 },
-      ]);
-      setNewOption("");
-      toast.success("Added new dinner option!");
+      const newOptionData = { dish: newOption.trim(), date: new Date().toISOString() };
+      try {
+        const response = await createDinnerPoll(newOptionData);
+        setOptions([...options, response.data]);
+        setNewOption("");
+        toast.success("Added new dinner option!");
+      } catch (error) {
+        toast.error("Failed to add dinner option");
+      }
     }
   };
 
-  const removeOption = (id: string) => {
-    setOptions(options.filter((option) => option.id !== id));
-    toast.success("Removed dinner option");
+  const removeOption = async (id) => {
+    try {
+      await deleteDinnerPoll(id);
+      setOptions(options.filter((option) => option.id !== id));
+      toast.success("Removed dinner option");
+    } catch (error) {
+      toast.error("Failed to remove dinner option");
+    }
   };
 
-  const vote = (id: string) => {
+  const vote = async (id) => {
     if (selectedOption) {
       toast.error("You've already voted!");
       return;
     }
-    setOptions(
-      options.map((option) =>
-        option.id === id ? { ...option, votes: option.votes + 1 } : option
-      )
-    );
-    setSelectedOption(id);
-    toast.success("Vote recorded!");
+    try {
+      const user = JSON.parse(localStorage.getItem('user'));
+      const voteData = { voter: user.username };
+      console.log(`Sending vote request to /dinnerpoll/${id}/vote with data:`, voteData);
+      await voteDinnerPoll(id, voteData);
+      setOptions((prevOptions) =>
+        prevOptions.map((option) =>
+          option.id === id ? { ...option, votes: (option.votes || []).concat(voteData) } : option
+        )
+      );
+      setSelectedOption(id);
+      toast.success("Vote recorded!");
+    } catch (error) {
+      console.log("Vote error:", error);
+      toast.error("Failed to record vote");
+    }
   };
 
   const resetPoll = () => {
     setOptions([]);
-    setSelectedOption(undefined);
+    setSelectedOption("");
     toast.success("Poll reset!");
   };
 
   return (
     <div className="container px-4 py-8 max-w-2xl mx-auto">
-      <Link to="/">
+      <Link to="/index">
         <Button variant="ghost" className="mb-4">
           <ArrowLeft className="mr-2 h-4 w-4" /> Back to Home
         </Button>
@@ -95,7 +114,7 @@ const DinnerPoll = () => {
               >
                 <div className="flex-1">
                   <div className="flex items-center justify-between mb-2">
-                    <span className="font-medium">{option.text}</span>
+                    <span className="font-medium">{option.dish}</span>
                     <Button
                       variant="ghost"
                       size="icon"
@@ -106,13 +125,13 @@ const DinnerPoll = () => {
                   </div>
                   <div className="flex items-center justify-between">
                     <span className="text-sm text-muted-foreground">
-                      {option.votes} vote{option.votes !== 1 ? "s" : ""}
+                      {option.votes && option.votes.length} vote{option.votes && option.votes.length !== 1 ? "s" : ""}
                     </span>
                     <Button
                       variant="secondary"
                       size="sm"
                       onClick={() => vote(option.id)}
-                      disabled={selectedOption !== undefined}
+                      disabled={selectedOption !== ""}
                     >
                       Vote
                     </Button>

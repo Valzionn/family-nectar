@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Calendar } from "@/components/ui/calendar";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
@@ -6,29 +6,55 @@ import { Input } from "@/components/ui/input";
 import { ArrowLeft, Plus } from "lucide-react";
 import { Link } from "react-router-dom";
 import { toast } from "sonner";
+import { getCalendarEvents, createCalendarEvent, deleteCalendarEvent } from '../services/api';
 
 interface Event {
   id: string;
   title: string;
   date: Date;
+  time: string; 
 }
 
 const CalendarPage = () => {
   const [events, setEvents] = useState<Event[]>([]);
   const [selectedDate, setSelectedDate] = useState<Date>();
   const [newEvent, setNewEvent] = useState("");
+  const [newEventTime, setNewEventTime] = useState(""); 
   const [dialogOpen, setDialogOpen] = useState(false);
 
-  const addEvent = (e: React.FormEvent) => {
+  useEffect(() => {
+    const fetchEvents = async () => {
+      const response = await getCalendarEvents();
+      setEvents(response.data.map((event) => ({
+        ...event,
+        date: new Date(event.date),
+        time: event.time 
+      })));
+    };
+    fetchEvents();
+  }, []);
+
+  const addEvent = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (newEvent.trim() && selectedDate) {
-      setEvents([
-        ...events,
-        { id: crypto.randomUUID(), title: newEvent.trim(), date: selectedDate },
-      ]);
-      setNewEvent("");
-      setDialogOpen(false);
-      toast.success("Event added successfully!");
+    if (newEvent.trim() && selectedDate && newEventTime.trim()) {
+      const newEventData = {
+        title: newEvent.trim(),
+        date: selectedDate.toISOString(),
+        time: newEventTime 
+      };
+      try {
+        const response = await createCalendarEvent(newEventData);
+        setEvents([
+          ...events,
+          { ...response.data, date: new Date(response.data.date) },
+        ]);
+        setNewEvent("");
+        setNewEventTime(""); 
+        setDialogOpen(false);
+        toast.success("Event added successfully!");
+      } catch (error) {
+        toast.error("Failed to add event");
+      }
     }
   };
 
@@ -40,7 +66,7 @@ const CalendarPage = () => {
 
   return (
     <div className="container px-4 py-8 max-w-3xl mx-auto">
-      <Link to="/">
+      <Link to="/index">
         <Button variant="ghost" className="mb-4">
           <ArrowLeft className="mr-2 h-4 w-4" /> Back to Home
         </Button>
@@ -59,7 +85,7 @@ const CalendarPage = () => {
               event: (date) => getDayEvents(date).length > 0,
             }}
             modifiersStyles={{
-              event: { color: "var(--primary)", fontWeight: "bold" },
+              event: { backgroundColor: "var(--primary)", fontWeight: "bold", color: "white" },
             }}
           />
         </div>
@@ -89,6 +115,12 @@ const CalendarPage = () => {
                     onChange={(e) => setNewEvent(e.target.value)}
                     placeholder="Event title..."
                   />
+                  <Input
+                    type="time"
+                    value={newEventTime}
+                    onChange={(e) => setNewEventTime(e.target.value)}
+                    placeholder="Event time..."
+                  />
                   <Button type="submit" className="w-full">
                     Add Event
                   </Button>
@@ -111,7 +143,7 @@ const CalendarPage = () => {
                       key={event.id}
                       className="p-2 rounded bg-secondary/20"
                     >
-                      {event.title}
+                      {event.title} at {event.time}
                     </li>
                   ))}
                 </ul>

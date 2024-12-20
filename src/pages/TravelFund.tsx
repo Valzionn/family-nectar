@@ -1,12 +1,15 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { useToast } from "@/components/ui/use-toast";
 import { PiggyBank, Plus } from "lucide-react";
+import { getContributions, createContribution, deleteContribution } from '../services/api';
+import { Link } from "react-router-dom"
+import { X, ArrowLeft } from "lucide-react";
 
 interface Contribution {
-  id: number;
+  id?: number; // Optional for frontend
   member: string;
   amount: number;
   date: string;
@@ -16,15 +19,25 @@ const TravelFund = () => {
   const { toast } = useToast();
   const [contributions, setContributions] = useState<Contribution[]>([]);
   const [newAmount, setNewAmount] = useState("");
-  const [memberName, setMemberName] = useState("");
+
+  useEffect(() => {
+    const fetchContributions = async () => {
+      const response = await getContributions();
+      setContributions(response.data);
+    };
+    fetchContributions();
+  }, []);
 
   const totalFund = contributions.reduce((sum, contribution) => sum + contribution.amount, 0);
 
-  const handleAddContribution = () => {
+  const handleAddContribution = async () => {
+    const user = JSON.parse(localStorage.getItem('user')); // Retrieve user data from local storage
+    const memberName = user.username; // Use username from user data
+
     if (!memberName || !newAmount) {
       toast({
         title: "Error",
-        description: "Please fill in both name and amount",
+        description: "Please fill in the amount",
         variant: "destructive",
       });
       return;
@@ -41,24 +54,35 @@ const TravelFund = () => {
     }
 
     const newContribution: Contribution = {
-      id: Date.now(),
       member: memberName,
       amount: amount,
-      date: new Date().toLocaleDateString(),
+      date: new Date().toISOString(),
     };
 
-    setContributions([...contributions, newContribution]);
-    setNewAmount("");
-    setMemberName("");
-
-    toast({
-      title: "Success",
-      description: `Added ${amount.toFixed(2)} to the travel fund!`,
-    });
+    try {
+      const response = await createContribution(newContribution);
+      setContributions([...contributions, response.data]);
+      setNewAmount("");
+      toast({
+        title: "Success",
+        description: `Added ${amount.toFixed(2)} to the travel fund!`,
+      });
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to add contribution",
+        variant: "destructive",
+      });
+    }
   };
 
   return (
-    <div className="container mx-auto px-4 py-8">
+    <div className="container px-4 py-8 max-w-2xl mx-auto">
+      <Link to="/index">
+        <Button variant="ghost" className="mb-4">
+          <ArrowLeft className="mr-2 h-4 w-4" /> Back to Home
+        </Button>
+      </Link>
       <div className="max-w-4xl mx-auto">
         <div className="text-center mb-8">
           <h1 className="text-4xl font-bold text-primary mb-4">Family Travel Fund</h1>
@@ -74,13 +98,6 @@ const TravelFund = () => {
           </CardHeader>
           <CardContent>
             <div className="flex flex-col md:flex-row gap-4">
-              <Input
-                type="text"
-                placeholder="Family Member Name"
-                value={memberName}
-                onChange={(e) => setMemberName(e.target.value)}
-                className="flex-1"
-              />
               <Input
                 type="number"
                 placeholder="Amount"
@@ -108,7 +125,7 @@ const TravelFund = () => {
                   <CardContent className="flex items-center justify-between p-4">
                     <div>
                       <p className="font-semibold">{contribution.member}</p>
-                      <p className="text-sm text-gray-500">{contribution.date}</p>
+                      <p className="text-sm text-gray-500">{new Date(contribution.date).toLocaleDateString()}</p>
                     </div>
                     <p className="text-lg font-semibold text-primary">
                       ${contribution.amount.toFixed(2)}

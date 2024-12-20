@@ -10,6 +10,7 @@ import ShoppingList from "./pages/ShoppingList";
 import Chores from "./pages/Chores";
 import CalendarPage from "./pages/Calendar";
 import TravelFund from "./pages/TravelFund";
+import ProtectedRoute from "./components/ProtectedRoute";
 
 const queryClient = new QueryClient();
 
@@ -20,13 +21,13 @@ const App = () => (
       <Sonner />
       <BrowserRouter>
         <Routes>
-          <Route path="/" element={<Index />} />
-          <Route path="/login" element={<Login />} />
-          <Route path="/dinner-poll" element={<DinnerPoll />} />
-          <Route path="/shopping-list" element={<ShoppingList />} />
-          <Route path="/chores" element={<Chores />} />
-          <Route path="/calendar" element={<CalendarPage />} />
-          <Route path="/travel-fund" element={<TravelFund />} />
+          <Route path="/index" element={<ProtectedRoute> <Index /> </ProtectedRoute>} />
+          <Route path="/" element={<Login />} />
+          <Route path="/dinner-poll" element={<ProtectedRoute> <DinnerPoll /> </ProtectedRoute>} />
+          <Route path="/shopping-list" element={<ProtectedRoute> <ShoppingList /> </ProtectedRoute>} />
+          <Route path="/chores" element={<ProtectedRoute> <Chores /> </ProtectedRoute>} />
+          <Route path="/calendar" element={<ProtectedRoute> <CalendarPage /> </ProtectedRoute>} />
+          <Route path="/travel-fund" element={<ProtectedRoute> <TravelFund /> </ProtectedRoute>} />
         </Routes>
       </BrowserRouter>
     </TooltipProvider>

@@ -1,15 +1,25 @@
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { PlusCircle, ListTodo, Vote, ShoppingCart, Calendar, PiggyBank } from "lucide-react";
-import { Link } from "react-router-dom";
+import { PlusCircle, ListTodo, Vote, ShoppingCart, Calendar, PiggyBank, ArrowRight } from "lucide-react";
+import { Link, useNavigate } from "react-router-dom";
 
 const Index = () => {
+  const navigate = useNavigate();
+
+  const handleLogout = () => {
+    localStorage.removeItem('user');
+    navigate('/'); 
+  };
+
   return (
     <div className="min-h-screen bg-gradient-to-b from-secondary to-white">
       <div className="container px-4 py-8">
         <header className="text-center mb-12">
           <h1 className="text-4xl font-bold text-primary mb-4">Family Hub</h1>
           <p className="text-lg text-gray-600">Keep your family organized and connected</p>
+          <Button variant="outline" onClick={handleLogout}>
+            Logout <ArrowRight className="ml-2 h-4 w-4" />
+          </Button>
         </header>
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
